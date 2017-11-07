@@ -64,8 +64,27 @@ class DB:
 
         return 0
 
-    def insertCatalogueItems(self):
-        pass
+    def insertCatalogueItems(self, catalogueitems):
+        """
+            Inserts multiple catalogue entries.
+
+            @param:
+                catalogueitems <list<dict>> - A list of dictionary items 
+                    representing catalogue items
+
+            @returns
+                <int> - returns -1 on failure
+                                 0 on sucess
+                                 1 on already existing
+        """
+
+        if len(catalogueitems) == 0:
+            #insert prent statment
+            return -1
+
+        #make threaded - check for errors
+        [self.insertCatalogueItem(i) for i in catalogueitems]
+        return 0;
     
     def insertItem(self,itemdict):
         """
@@ -101,8 +120,27 @@ class DB:
 
         return 0
         
-    def insertItems(self):
-        pass
+    def insertItems(self, itemdicts):
+        """
+            Inserts multiple catalogue entries.
+
+            @param:
+                itemdicts <list<dict>> - A list of dictionary items 
+                    representing rs items
+
+            @returns
+                <int> - returns -1 on failure
+                                 0 on sucess
+                                 1 on already existing
+        """
+        if len(itemdicts) == 0:
+            #insert print statment
+            return -1
+
+        #make threaded = check for errors
+        [self.insertItem(i) for i in itemdicts]
+
+
 
     def removeCatalogueItem(self,queryitem):
         """
@@ -114,15 +152,32 @@ class DB:
             @returns:
                 <int> - returns -1 on failure, 
                                  0 on success,
-                                 1 on non-existant/could'nt find item
+                                 1 on non-existant/couldn't find item
                                  2 on finding more than one entry
         """
         #error check
         self.catalogue.remove(queryitem) 
         return 0
 
-    def removeCatalogueItems(self):
-        pass
+    def removeCatalogueItems(self, queryitems):
+        """
+            Removes the given catalogue items from the catalogue collection 
+
+            @param:
+                queryitems <list<dict>> - List of Catalogue items
+
+            @returns:
+                <int> - returns -1 on failure,
+                                 0 on success,
+                                 1 on non-existant/couldn't find item
+                                 2 on finding more than one entry
+        """
+
+        if len(queryitems) == 0:
+            #add print statement
+            return -1
+        
+        [self.removeCatalogueItem(i) for i in queryitems]
     
     def removeItem(self,queryitem):
         """
@@ -141,8 +196,24 @@ class DB:
         self.items.remove(queryitem)
         return 0
     
-    def removeItems(self):
-        pass
+    def removeItems(self, queryitems):
+        """
+            Removes the given rs items from the item collection 
+
+            @param:
+                queryitems <list<dict>> - List of items represented as dicts
+
+            @returns:
+                <int> - returns -1 on failure,
+                                 0 on success,
+                                 1 on non-existant/couldn't find item
+                                 2 on finding more than one entry
+        """
+        if len(queryitems) == 0:
+            #print statment
+            return -1        
+
+        [self.removeItem(i) for i in queryitems]
 
     def catalogueQuery(self,queryitem):
         """
@@ -182,8 +253,24 @@ class DB:
         else:
             return [item for item in query]
 
-    def gatherAllItemsByDate(self):
-        pass
+    def gatherAllItemsByDate(self,datestring):
+        """
+            Queryies all items that were updated on the given date
+
+            @params:
+                datestring <string> - A datestring represented as MM/DD/YYYY
+            
+            @returns:
+                <list<dict>> A list of items represented as dicts 
+                            [] on failure 
+        """
+        #error check
+        query = self.items.find({"dateacc":datestring}) 
+    
+        if query.count() == 0:
+            return []
+        else:
+            return [item for item in query]
 
     def clearCatalogue(self):
         """
@@ -213,4 +300,4 @@ if __name__ == '__main__':
     db.insertItem({"id":1,"name":"dog","members":True,"today":"1","date":"00/00/0000"})
     db.insertItem({"id":3,"name":"dog","members":True,"today":"1","date":"00/00/0020"})
     db.insertItem({"id":2,"name":"dog","members":False,"today":"1","date":"00/00/0020"})
-    db.removeItem({"_id":1})
+    print(db.gatherAllItemsByDate("00/00/0020"))
