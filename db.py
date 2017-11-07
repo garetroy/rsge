@@ -5,7 +5,7 @@
     This program is for modifying the database within the osrsge program.
     Uses mongodb to store,query, and remove data.
 """
-from pymongo import MongoClient
+from pymongo import MongoClient, errors
 
 class DB:
     """
@@ -20,8 +20,16 @@ class DB:
                 ip <string> - The ip address of the mongodb 
                 port <int>  - The port number of the mongodb
         """
-        #need error checking here
         self.client     = MongoClient(ip,port)
+
+        try:
+            self.client.server_info() 
+            print("Connected to db successfully")
+        except errors.ConnectionFailure:
+            print("Could not connect to mongodb at address: {} port: {}".\
+                    format(ip,port))
+            exit()
+            
         self.database   = self.client.osrsge 
         self.catalogue  = self.database.catalogue
         self.items      = self.database.items
@@ -37,7 +45,6 @@ class DB:
             @returns:
                 <int> - returns -1 if failed to insert item
                                  0 on success
-                                 1 on already existing
 
             Ex of catalogueitem:
                 The catalouge item must look similar to this format
@@ -46,7 +53,7 @@ class DB:
                 }}
         """
         if catalogueitem == {}:
-            #insert print statement
+            print("No catalogueitem given in insertCatalougeItem")
             return -1 
         
 
@@ -59,8 +66,12 @@ class DB:
                     "numitems" : alpha[itemidx]["items"]
             }
 
-            #error checking
-            self.catalogue.insert_one(item)
+            try:
+                self.catalogue.insert_one(item)
+            except(errors.WriteError, errors.WriteConcernError) as e:
+                print("Write error in insertCatalogueItem: {}".format(e))
+                print("catalogueitem = {}".format(item))
+                return -1
 
         return 0
 
@@ -75,16 +86,19 @@ class DB:
             @returns
                 <int> - returns -1 on failure
                                  0 on sucess
-                                 1 on already existing
         """
 
         if len(catalogueitems) == 0:
             #insert prent statment
             return -1
 
-        #make threaded - check for errors
-        [self.insertCatalogueItem(i) for i in catalogueitems]
-        return 0;
+        #make threaded
+        for i in catalogueitems:
+            if(self.insertCatalogueItem(i) == -1):
+                print("insertCatalogueItems failed")
+                return -1
+
+        return 0
     
     def insertItem(self,itemdict):
         """
@@ -96,7 +110,6 @@ class DB:
             @returns:
                 <int> - returns -1 if failed to insert item
                                  0 on success
-                                 1 on already existing
 
             Ex of itemdict:
                 {"id":<int>, "name":<string>, "members":<bool>,
@@ -104,7 +117,7 @@ class DB:
         """
 
         if itemdict == {}:
-        #insert print statment
+            print("itemdict in insertItem was empty")
             return -1
 
         item = {
@@ -115,8 +128,12 @@ class DB:
                 "dateacc" : itemdict["date"]
         }
 
-        #error checking
-        self.items.insert_one(item)
+        try:
+            self.items.insert_one(item)
+        except(errors.WriteError, errors.WriteConcernError) as e:
+            print("Write error in insertItem: {}".format(e))
+            print("catalogueitem = {}".format(item))
+            return -1
 
         return 0
         
@@ -131,14 +148,17 @@ class DB:
             @returns
                 <int> - returns -1 on failure
                                  0 on sucess
-                                 1 on already existing
         """
         if len(itemdicts) == 0:
-            #insert print statment
+            print("itemdicts in insertItems was empty")
             return -1
 
-        #make threaded = check for errors
-        [self.insertItem(i) for i in itemdicts]
+        #make threaded
+        for i in itemdicts:
+            if(self.insertItem(i) == -1):
+                print("insertItems failed")
+                return -1
+        return 0
 
 
 
@@ -293,6 +313,7 @@ if __name__ == '__main__':
 
     db = DB()
     db.clearCatalogue()
+    db.insertCatalogueItem(temp)
     db.insertCatalogueItem(temp)
     print(db.catalogueQuery({"letter":"d"}))
     db.removeCatalogueItem({"letter":"c"})  
