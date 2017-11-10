@@ -26,9 +26,9 @@ class DB:
             self.client.server_info() 
             print("Connected to db successfully")
         except errors.ConnectionFailure:
-            print("Could not connect to mongodb at address: {} port: {}".\
-                    format(ip,port))
-            exit()
+            raise Exception(\
+                "Could not connect to mongodb at address: {} port: {}"\
+                .format(ip,port))
             
         self.database   = self.client.osrsge 
         self.catalogue  = self.database.catalogue
@@ -57,11 +57,11 @@ class DB:
             return -1 
         
 
-        alpha = temp["catalogue"]["alpha"]
+        alpha = catalogueitem["catalogue"]["alpha"]
         for itemidx in range(len(alpha)):
             item = {
                     "_id"      : itemidx,
-                    "pagenum"  : temp["pagenum"],
+                    "pagenum"  : catalogueitem["pagenum"],
                     "letter"   : alpha[itemidx]["letter"],
                     "numitems" : alpha[itemidx]["items"]
             }
@@ -70,7 +70,7 @@ class DB:
                 self.catalogue.insert_one(item)
             except(errors.WriteError, errors.WriteConcernError) as e:
                 print("Write error in insertCatalogueItem: {}".format(e))
-                print("catalogueitem = {}".format(item))
+                print("errornus catalogueitem = {}".format(item))
                 return -1
 
         return 0
@@ -87,7 +87,6 @@ class DB:
                 <int> - returns -1 on failure
                                  0 on sucess
         """
-
         if len(catalogueitems) == 0:
             #insert prent statment
             return -1
@@ -115,7 +114,6 @@ class DB:
                 {"id":<int>, "name":<string>, "members":<bool>,
                     "today":<string>, "date":<string> FMT:"00/00/000"}
         """
-
         if itemdict == {}:
             print("itemdict in insertItem was empty")
             return -1
@@ -172,11 +170,14 @@ class DB:
             @returns:
                 <int> - returns -1 on failure, 
                                  0 on success,
-                                 1 on non-existant/couldn't find item
-                                 2 on finding more than one entry
         """
-        #error check
-        self.catalogue.remove(queryitem) 
+        try:
+            self.catalogue.remove(queryitem) 
+        except:
+            print("Could not remove item {} in removeCatalogueItem"\
+                .format(queryitem))
+            return -1
+
         return 0
 
     def removeCatalogueItems(self, queryitems):
@@ -189,16 +190,19 @@ class DB:
             @returns:
                 <int> - returns -1 on failure,
                                  0 on success,
-                                 1 on non-existant/couldn't find item
-                                 2 on finding more than one entry
         """
-
         if len(queryitems) == 0:
-            #add print statement
+            print("queryitems given in removeCatalogueItems was empty")
             return -1
         
-        [self.removeCatalogueItem(i) for i in queryitems]
-    
+        #needs threading
+        for i in queryitems:
+            if(self.removeCatalogueItem(i) == -1):
+                print("removeCatalogueItems failed")    
+                return -1
+
+        return 0 
+
     def removeItem(self,queryitem):
         """
             Removes the given queryitem from catalogue collection
@@ -209,11 +213,14 @@ class DB:
             @returns:
                 <int> - returns -1 on failure, 
                                  0 on success,
-                                 1 on non-existant/could'nt find item
-                                 2 on finding more than one entry
         """
-        #error check
-        self.items.remove(queryitem)
+        try:
+            self.items.remove(queryitem)
+        except:
+            print("Could not remove queryitem {} in removeItem"\
+                .format(queryitem))
+            return -1
+
         return 0
     
     def removeItems(self, queryitems):
@@ -226,14 +233,17 @@ class DB:
             @returns:
                 <int> - returns -1 on failure,
                                  0 on success,
-                                 1 on non-existant/couldn't find item
-                                 2 on finding more than one entry
         """
         if len(queryitems) == 0:
-            #print statment
+            print("queryitems in removeItems was empty")
             return -1        
 
-        [self.removeItem(i) for i in queryitems]
+        #needs threading
+        for i in queryitems:
+            if(self.removeItem(i) == -1):
+                print("removeItems failed")
+                return -1
+        return 0
 
     def catalogueQuery(self,queryitem):
         """
@@ -244,10 +254,14 @@ class DB:
                 queryitem <dict> - Some info to query our database with
             
             @returns:
-                <list> - [] on failure, else a populated dictonary
+                <list> - [] on failure (or not found), 
+                        else a populated dictonary
         """        
-        #error check
-        query = self.catalogue.find(queryitem)
+        try:
+            query = self.catalogue.find(queryitem)
+        except:
+            print("Query failed for {} in catalogueQuery".format(queryitem))
+            return []
 
         if query.count() == 0:
             return []
@@ -263,10 +277,14 @@ class DB:
                 queryitem <dict> - Some info to query our database with
 
             @returns:
-                <list> - [] on failure, else a populated dictionary
+                <list> - [] on failure (or not found), 
+                        else a populated dictionary
         """
-        #error check
-        query = self.items.find(queryitem)
+        try:
+            query = self.items.find(queryitem)
+        except:
+            print("Query faild for {} in itemQuery".format(queryitem))
+            return []
 
         if query.count() == 0:
             return []
@@ -282,43 +300,77 @@ class DB:
             
             @returns:
                 <list<dict>> A list of items represented as dicts 
-                            [] on failure 
+                            [] on failure (or could not find)
         """
-        #error check
-        query = self.items.find({"dateacc":datestring}) 
+        try:
+            query = self.items.find({"dateacc":datestring}) 
+        except:
+            print("Query failed for {} in gatherAllItemsByDate"\
+                    .format(datestring))
+            return []
     
         if query.count() == 0:
             return []
         else:
             return [item for item in query]
 
+    def getCatalogueColSize(self):
+        """
+            Returns the size of the Catalogue collection
+
+            @returns:
+                <int>
+                -1 if error
+                size of collection otherwise
+        """
+        try:
+            return self.catalogue.count()
+        except:
+            print("Error getting collection size in getCatalogueColSize")
+            return -1
+        
+
+    def getItemColSize(self):
+        """
+            Returns the size of the Items collection
+
+            @returns:
+                <int>
+                -1 if error
+                size of collection otherwise
+        """
+        try:
+            return self.items.count()
+        except:
+            print("Error getting collection size in getItemColSize")
+            return -1
+        
+
     def clearCatalogue(self):
         """
             Drops catalogue from table
+            
+            @returns 
+                False - if unsucessful (collection dosen't exist)
         """
-        #needs error checking.. (already gone, sucessful?)
-        self.catalogue.drop()
+        try:
+            self.catalogue.drop()
+            return True
+        except:
+            print("clearCatalogue failed!")
+            return False
     
     def clearItems(self):
         """
             Drops items from table
+
+            @returns 
+                True - if successfully drops collection
+                False - if unsucessful (collection dosen't exist)
         """
-        #error checking
-        self.items.drop()
-
-if __name__ == '__main__':
-    temp = {"pagenum":0, "catalogue":{"types":[],"alpha":[{"letter":"#",
-            "items":0},{"letter":"a","items":6},{"letter":"b","items":8},
-            {"letter":"c","items":1},{"letter":"d","items":3}]}}
-
-    db = DB()
-    db.clearCatalogue()
-    db.insertCatalogueItem(temp)
-    db.insertCatalogueItem(temp)
-    print(db.catalogueQuery({"letter":"d"}))
-    db.removeCatalogueItem({"letter":"c"})  
-    db.clearItems()
-    db.insertItem({"id":1,"name":"dog","members":True,"today":"1","date":"00/00/0000"})
-    db.insertItem({"id":3,"name":"dog","members":True,"today":"1","date":"00/00/0020"})
-    db.insertItem({"id":2,"name":"dog","members":False,"today":"1","date":"00/00/0020"})
-    print(db.gatherAllItemsByDate("00/00/0020"))
+        try:
+            self.items.drop()
+            return True
+        except:
+            print("clearItems failed!")
+            return False
