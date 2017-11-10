@@ -1,3 +1,6 @@
+import sys
+sys.path.append("../src/")
+
 from db import DB
 
 temp = {"pagenum":0, "catalogue":{"types":[],"alpha":[{"letter":"#",
