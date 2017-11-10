@@ -17,4 +17,17 @@ def Scraper:
         self.quantityurl = "http://api.rsbuddy.com/grandExchange?a=guidePric" + \
             "e&i="
  
- 
+    def createItemUrl(self,category,letter,page):
+        pass
+
+    def getCategory(self):
+        pass
+
+    def getCategories(self):
+        pass 
+
+    def getItems(self):
+        pass
+
+    def getItem(self):
+        pass
