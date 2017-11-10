@@ -123,7 +123,8 @@ class DB:
                 "name"    : itemdict["name"],
                 "members" : itemdict["members"],
                 "today"   : itemdict["today"],
-                "dateacc" : itemdict["date"]
+                "dateacc" : itemdict["date"],
+                "catid"   : itemdict["catid"]
         }
 
         try:
