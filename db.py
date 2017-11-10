@@ -34,7 +34,7 @@ class DB:
         self.catalogue  = self.database.catalogue
         self.items      = self.database.items
 
-    def insertCatalogueItem(self,catalogueitem):
+    def insertCatalogueItem(self,catalogueitem={}):
         """
             This method takes a catalouge item and inserts it into
             the catalogues collection.
@@ -60,7 +60,7 @@ class DB:
         alpha = catalogueitem["catalogue"]["alpha"]
         for itemidx in range(len(alpha)):
             item = {
-                    "_id"      : itemidx,
+                    "_id"      : 1 + self.getCatalogueColSize(),
                     "pagenum"  : catalogueitem["pagenum"],
                     "letter"   : alpha[itemidx]["letter"],
                     "numitems" : alpha[itemidx]["items"]
@@ -88,7 +88,7 @@ class DB:
                                  0 on sucess
         """
         if len(catalogueitems) == 0:
-            #insert prent statment
+            print("Given catalogueitems is empty in insertCatalogueItems")
             return -1
 
         #make threaded
@@ -99,7 +99,7 @@ class DB:
 
         return 0
     
-    def insertItem(self,itemdict):
+    def insertItem(self,itemdict={}):
         """
             Takes an itemdict and inserts it into the items collection.
 
