@@ -1,0 +1,5 @@
+{
+    "serverip"   : "localhost",
+    "serverport" : 7093,
+    "clients"    : {}
+}
