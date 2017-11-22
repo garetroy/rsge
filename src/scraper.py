@@ -3,10 +3,8 @@
 
     This program is for scraping the osrs api.  
 """
-import json,time,os.path,math
+import json
 from urllib.request import urlopen
-from datetime       import date
-from os             import remove
     
 class Scraper:
     """
