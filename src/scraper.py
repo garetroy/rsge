@@ -39,7 +39,7 @@ class Scraper:
 
         try:
             url  = self.itemdetail + str(idnum)
-            resp = urlopen(url) #add to parallelizer
+            resp = urlopen(url) 
             cont = json.loads(resp.read())
             return cont['item']
         except:
