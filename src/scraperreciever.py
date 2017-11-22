@@ -35,25 +35,53 @@ class ScraperR(Scraper):
         except:
             print("server-clients config file not properly formatted")
             exit()
+        
+        self.socket = self.createSocket()
 
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.host   = socket.gethostname()
+    def createSocket(self):
+        """
+            Creates the client sockets
+
+            @returns:
+                (socket.socket) - A socket we create
+        """
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        except socket.error as err:
+            print("Sockets couldn't be created {}".format(err)) 
+
+        return s
 
     def serverConnection(self):
-        #Wait for connection/while connected.
+        """
+            Forever waits for a servers conenctions, then its message
+            containing a string with corresponding id numbers for items
+            
+            Msg Example: 
+                b'2 6'
+        """
         while True:
             try:
-                self.socket.connect(("localhost",9999))
-                itemids = json.loads(self.socket.recv(2048))
-                print(itemids)
-                exit()
-                startScraping(itemids)
-            except:
+                self.socket = self.createSocket()
+                self.socket.connect((self.serverip,self.serverport))
+                self.startScraping(self.socket.recv(2048).decode("utf-8"))
+                self.socket.close()
+            except socket.error as err:
+                print("Socket exception caught {}".format(err))
+                time.sleep(1)
                 continue
 
     def startScraping(self,ids): 
-        #Get Item ID
-        #Send to server
-            #if unsucessful, return
-        #wait 5 seconds for next scrape
-        pass
+        """
+            Recieves a string with corresponding item ids then scrapes
+            one by one for them, then sends the items to the server
+            
+            @params:
+                ids (int) - A integer spaced string containing item ids
+        """
+        idlist = ids.split(" ")
+        for itemid in idlist:
+            item = self.getItem(int(itemid))
+            self.socket.sendall(json.dumps(item).encode("utf-8"))
+            time.sleep(5)
