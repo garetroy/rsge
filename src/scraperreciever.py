@@ -66,6 +66,7 @@ class ScraperR(Scraper):
                 self.socket = self.createSocket()
                 self.socket.connect((self.serverip,self.serverport))
                 self.startScraping(self.socket.recv(2048).decode("utf-8"))
+                #needs to send a done signal
                 self.socket.close()
             except socket.error as err:
                 print("Socket exception caught {}".format(err))
